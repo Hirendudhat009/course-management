@@ -1,0 +1,421 @@
+openapi: "3.0.2"
+info:
+  title: API Title
+  version: "1.0"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      description: "#### Example: Bearer [TOKEN]"
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: hiren@mailinator.com
+        otp:
+          type: integer
+          example: 95641
+      required:
+        - email
+        - otp
+
+    Verification:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: john@mailinator.com
+        otp:
+          type: string
+          example: 956412
+      required:
+        - email
+        - otp
+
+  responses:
+    Success:
+      description: success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: success
+
+    UnauthorizedError:
+      description: |
+        - Enter valid OTP 
+        - This refresh token is expired, please login
+        - Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Unauthorized
+
+    ConflictError:
+      description: |
+        - This email is already exist
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: conflict error
+
+    NotFoundError:
+      description: |
+        - Not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Not Found
+
+    UserNotFoundError:
+      description: |
+        - This user is not exist
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: integer
+                example: Not Found
+
+    BadRequestError:
+      description: |
+        - bad request error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: bad request error
+
+    UnprocessableEntity:
+      description: Unprocessable Entity
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: validation error
+
+paths:
+
+  /auth/login:
+    post:
+      summary: Login service [USER, ADMIN]
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: admin@courses.com
+                password:
+                  type: string
+                  format: email
+                  example: courses@
+              required:
+                - email
+                - password
+      responses:
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+
+  /auth/logout:
+    post:
+      summary: Logout
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+
+  /auth/add-user:
+    post:
+      summary: Add User service [ADMIN]
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john@mailinator.com
+                password:
+                  type: string
+                  example: password
+
+              required:
+                - email
+                - password
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+  /auth/users:
+     get:
+      summary: Get users list [ADMIN]
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          required: false
+          name: page
+          schema:
+            type: integer
+            example: 1
+        - in: query
+          required: false
+          name: perPage
+          schema:
+            type: integer
+            example: 25
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /courses:
+    post:
+      summary: create courses [ADMIN]
+      tags:
+        - Courses
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: this is sample title
+                description:
+                  type: string
+                  example: description
+                category:
+                  type: string
+                  example: category
+                duration:
+                  type: string
+                  example: 45 hours
+
+              required:
+                - title
+                - description
+                - category
+                - duration
+
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+    get:
+      summary: Get course list [ADMIN, USER]
+      tags:
+        - Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          required: false
+          name: search
+          schema:
+            type: string
+        - in: query
+          required: false
+          name: sort
+          schema:
+            type: string
+            enum: [ASC,DESC]
+            example: DESC
+        - in: query
+          required: false
+          name: myCourse
+          schema:
+            enum: [0,1]
+            example: 0
+
+        - in: query
+          required: false
+          name: page
+          schema:
+            type: integer
+            example: 1
+        - in: query
+          required: false
+          name: perPage
+          schema:
+            type: integer
+            example: 25
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+    patch:
+      summary: udpate course [ADMIN]
+      tags:
+        - Courses
+      parameters:
+        - in: query
+          required: true
+          name: id
+          schema:
+            type: number
+            example: 1
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: this is sample title
+                description:
+                  type: string
+                  example: description
+                category:
+                  type: string
+                  example: category
+                duration:
+                  type: string
+                  example: 45 hours
+
+              required:
+                - title
+                - description
+                - category
+                - duration
+              
+
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+    delete:
+      summary: Delete course [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          required: true
+          name: id
+          schema:
+            type: number
+            example: 1
+      tags:
+        - Courses
+      responses:
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "200":
+          $ref: "#/components/responses/Success"
+
+  /courses/enrolled-student:
+     put:
+      summary: enrolled student in course [ADMIN]
+      tags:
+        - Courses
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                courseId:
+                  type: number
+                  example: 1
+                userId:
+                  type: number
+                  example: 1
+
+              required:
+                - courseId
+                - userId
+
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "409":
+          $ref: "#/components/responses/ConflictError"
